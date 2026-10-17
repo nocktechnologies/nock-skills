@@ -5,9 +5,10 @@ this file and move dated historical notes to `docs/archive/`.
 
 ## What changed
 
-- This checkout began with `CLAUDE.md` as the repo map and no repository
-  `docs/HANDOFF.md`; the agent guide and current handoff are being established
-  by Nock #11956.
+- Added a repository guide that points to the public catalogue, project docs,
+  and current handoff.
+- Made `CLAUDE.md` import `AGENTS.md` and added the current handoff, project
+  reference files, and a tracked-file path check.
 - The repository is a public Markdown-only catalogue of standalone skills.
   There is no build, runtime, package manifest, or existing test suite.
 
@@ -20,6 +21,4 @@ this file and move dated historical notes to `docs/archive/`.
 
 ## Still open
 
-- The Nock #11956 pull request is pending review and human merge.
-- Rowan owns the final review and merge gate; after opening the PR, send Rowan
-  its URL and head SHA, then make no further pushes unless asked.
+- The pull request for these changes is open and awaiting review.
