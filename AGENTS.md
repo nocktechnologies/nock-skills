@@ -34,6 +34,10 @@ GitHub Actions runs the same check on pull requests and pushes to `main`. The
 workflow uses a GitHub-hosted runner and needs no secrets. Keep the check green
 before opening or updating a pull request.
 
+GitHub Actions also scans every skill directory with SkillSpector in static-only
+mode on pull requests and pushes to `main`, uploads SARIF, and fails on HIGH or
+CRITICAL findings or risk scores above 50.
+
 Changes are published through a pull request into `main`. After merge, users
 install or update from the public repository as described in `README.md`; there
 is no deployment service or release artifact.
@@ -78,7 +82,7 @@ is no deployment service or release artifact.
 | Project direction | `ROADMAP.md` |
 | Change history | `CHANGELOG.md` |
 | Agent-path validation | `scripts/check-agents-paths.mjs` |
-| Pull request and main-branch check | `.github/workflows/agents-paths.yml` |
+| Pull request and main-branch checks | `.github/workflows/agents-paths.yml`, `.github/workflows/skillspector.yml` |
 
 ## Skill catalogue
 

@@ -9,8 +9,13 @@ this file and move dated historical notes to `docs/archive/`.
   handoff focused on product information.
 - Reviewed the guide and current handoff for internal identifiers and
   operational details.
+- Added a static SkillSpector scan for every skill directory on pull requests
+  and pushes to `main`; CI uploads per-skill SARIF reports and fails on HIGH or
+  CRITICAL findings or risk scores above 50.
 - The repository is a public Markdown-only catalogue of standalone skills.
   It has no build, runtime, package manifest, or separate test suite.
+- The SkillSpector workflow rejects a report path that already exists before
+  scanning, so a later skill cannot overwrite an earlier skill's SARIF report.
 
 ## What bit us
 

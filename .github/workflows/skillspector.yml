@@ -1,0 +1,113 @@
+name: Skill security scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  skillspector:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install SkillSpector v2.13.0
+        run: |
+          python -m venv "${RUNNER_TEMP}/skillspector-venv"
+          "${RUNNER_TEMP}/skillspector-venv/bin/python" -m pip install \
+            "git+https://github.com/NVIDIA/SkillSpector.git@091a509b3d6ba8ff5be528966e1f43c2e68cf214"
+
+      - name: Scan every skill (static only)
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          scanner="${RUNNER_TEMP}/skillspector-venv/bin/skillspector"
+          report_dir="skillspector-reports"
+          mkdir -p "$report_dir"
+
+          mapfile -d '' skill_files < <(find . -path ./.git -prune -o -mindepth 2 -type f -name SKILL.md -print0 | sort -z)
+          if (( ${#skill_files[@]} == 0 )); then
+            echo "No skill directories containing SKILL.md were found." >&2
+            exit 1
+          fi
+
+          risk_score_failed=false
+          for skill_file in "${skill_files[@]}"; do
+            skill_dir="${skill_file%/SKILL.md}"
+            relative_dir="${skill_dir#./}"
+            report_name="${relative_dir//\//__}"
+            report="${report_dir}/${report_name}.sarif"
+            if [[ -e "$report" || -L "$report" ]]; then
+              echo "::error::Duplicate SkillSpector report name '${report_name}' for ${relative_dir}; refusing to overwrite ${report}." >&2
+              exit 1
+            fi
+            scan_status=0
+
+            "$scanner" scan "$skill_dir" --no-llm --format sarif --output "$report" || scan_status=$?
+            if (( scan_status > 1 )); then
+              echo "SkillSpector failed to scan ${relative_dir} (exit ${scan_status})." >&2
+              exit "$scan_status"
+            elif (( scan_status == 1 )); then
+              risk_score_failed=true
+            fi
+            if [[ ! -s "$report" ]]; then
+              echo "SkillSpector did not produce a SARIF report for ${relative_dir}." >&2
+              exit 1
+            fi
+
+            jq --arg prefix "${relative_dir}/" --arg analysis_id "skillspector-${report_name}" '
+              (.runs[].automationDetails.id) = $analysis_id
+              | walk(
+                if type == "object"
+                  and (.artifactLocation? | type == "object")
+                  and (.artifactLocation.uri? | type == "string")
+                  and (.artifactLocation.uri | startswith("/") | not)
+                  and (.artifactLocation.uri | contains("://") | not)
+                then .artifactLocation.uri |= ($prefix + .)
+                else .
+                end
+              )
+            ' "$report" > "${report}.tmp"
+            mv "${report}.tmp" "$report"
+          done
+
+          jq -s '{"$schema": .[0]."$schema", version: .[0].version, runs: [.[].runs[]]}' \
+            "${report_dir}"/*.sarif > skillspector-results.sarif
+          echo "risk_score_failed=${risk_score_failed}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload SkillSpector SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: skillspector-reports
+
+      - name: Enforce SkillSpector policy
+        env:
+          RISK_SCORE_FAILED: ${{ steps.scan.outputs.risk_score_failed }}
+        run: |
+          if jq -e '
+            any(.runs[].results[]?;
+              (.properties.severity // "" | tostring | ascii_upcase)
+              | IN("HIGH", "CRITICAL")
+            )
+          ' skillspector-results.sarif >/dev/null; then
+            echo "::error::SkillSpector found one or more HIGH or CRITICAL findings."
+            exit 1
+          fi
+
+          if [[ "$RISK_SCORE_FAILED" == "true" ]]; then
+            echo "::error::SkillSpector risk score exceeded 50 (the HIGH risk band begins at 51)."
+            exit 1
+          fi
+
+          echo "SkillSpector policy passed."
