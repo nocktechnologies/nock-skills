@@ -48,6 +48,10 @@ jobs:
             relative_dir="${skill_dir#./}"
             report_name="${relative_dir//\//__}"
             report="${report_dir}/${report_name}.sarif"
+            if [[ -e "$report" || -L "$report" ]]; then
+              echo "::error::Duplicate SkillSpector report name '${report_name}' for ${relative_dir}; refusing to overwrite ${report}." >&2
+              exit 1
+            fi
             scan_status=0
 
             "$scanner" scan "$skill_dir" --no-llm --format sarif --output "$report" || scan_status=$?
