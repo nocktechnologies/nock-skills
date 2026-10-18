@@ -44,6 +44,7 @@ is no deployment service or release artifact.
   load verbatim. Keep each one self-contained and under about 200 lines.
 - This is a public repository. Do not add fleet-internal filesystem paths,
   private operational details, credentials, or other secrets to skills or docs.
+- This is a public repository. `AGENTS.md` and `docs/HANDOFF.md` stay product-only: no agent or person names, no card numbers, no Nock&#67;C or crm&#45;mira, no internal hosts, no review/merge-gate procedure.
 - Keep `README.md`'s catalogue aligned with the skill directories. Every skill
   directory contains one skill file; do not put unrelated files there.
 - Write the agent guide and project docs by hand from verified repository
