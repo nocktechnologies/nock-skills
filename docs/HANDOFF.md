@@ -14,6 +14,8 @@ this file and move dated historical notes to `docs/archive/`.
   CRITICAL findings or risk scores above 50.
 - The repository is a public Markdown-only catalogue of standalone skills.
   It has no build, runtime, package manifest, or separate test suite.
+- The SkillSpector workflow rejects a report path that already exists before
+  scanning, so a later skill cannot overwrite an earlier skill's SARIF report.
 
 ## What bit us
 
