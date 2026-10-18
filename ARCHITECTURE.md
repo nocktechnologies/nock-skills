@@ -15,6 +15,9 @@ build system, package dependencies, or generated output.
 - `scripts/check-agents-paths.mjs` validates local paths named by `AGENTS.md`.
 - `.github/workflows/agents-paths.yml` runs that validation for pull requests
   and pushes to `main`.
+- `.github/workflows/skillspector.yml` runs static SkillSpector scans for each
+  skill directory, uploads SARIF, and fails on HIGH or CRITICAL findings or risk
+  scores above 50.
 
 ## Content flow
 
